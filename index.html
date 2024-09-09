@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Model Interaction</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script>
+        // Configuración básica de la escena
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Luz en la escena
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(5, 5, 5).normalize();
+        scene.add(light);
+
+        // Cargar el modelo GLTF
+        const loader = new THREE.GLTFLoader();
+        loader.load('models/mini_room_art_copy.gltf', function (gltf) {
+            const model = gltf.scene;
+            scene.add(model);
+            model.position.set(0, 0, 0);
+            model.scale.set(0.1, 0.1, 0.1); // Para hacerlo aún más pequeño
+
+
+
+            // Añadir control de movimiento con el mouse
+            let isDragging = false;
+            let previousMousePosition = { x: 0, y: 0 };
+
+            document.addEventListener('mousedown', function (event) {
+                isDragging = true;
+            });
+
+            document.addEventListener('mousemove', function (event) {
+                if (isDragging) {
+                    let deltaMove = {
+                        x: event.offsetX - previousMousePosition.x,
+                        y: event.offsetY - previousMousePosition.y
+                    };
+
+                    let deltaRotationQuaternion = new THREE.Quaternion()
+                        .setFromEuler(new THREE.Euler(
+                            toRadians(deltaMove.y * 1),
+                            toRadians(deltaMove.x * 1),
+                            0,
+                            'XYZ'
+                        ));
+
+                    model.quaternion.multiplyQuaternions(deltaRotationQuaternion, model.quaternion);
+
+                    previousMousePosition = {
+                        x: event.offsetX,
+                        y: event.offsetY
+                    };
+                }
+            });
+
+            document.addEventListener('mouseup', function (event) {
+                isDragging = false;
+            });
+
+            function toRadians(angle) {
+                return angle * (Math.PI / 180);
+            }
+        });
+
+        // Posición inicial de la cámara
+        camera.position.z = 5;
+
+         // Añadir zoom in y zoom out con la rueda del mouse
+         document.addEventListener('wheel', function (event) {
+            // Ajusta el valor de 0.1 para controlar la velocidad del zoom
+            camera.position.z += event.deltaY * 0.01;
+            // Limitar el zoom (opcional)
+            camera.position.z = Math.max(1, Math.min(100, camera.position.z));
+        });
+
+
+        // Animación
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Ajustar la escena si se cambia el tamaño de la ventana
+        window.addEventListener('resize', function () {
+            let width = window.innerWidth;
+            let height = window.innerHeight;
+            renderer.setSize(width, height);
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+        });
+    </script>
+</body>
+</html>
